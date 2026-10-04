@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">JEE Saathi</string>
+    <string name="nav_tracker">Tracker</string>
+    <string name="nav_tests">Tests</string>
+    <string name="nav_3d">3D Studio</string>
+    <string name="nav_results">Results</string>
+</resources>

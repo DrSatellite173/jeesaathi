@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)'], ['$', '$']], displayMath: [['\\[', '\\]'], ['$$', '$$']] },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'input'] }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: sans-serif; padding: 12px 12px 40px; margin: 0; background: #fff; color: #1b1f2a; font-size: 16px; line-height: 1.5; }
+  #q { margin-bottom: 14px; overflow-x: auto; }
+  #q img, .ot img { max-width: 100%; height: auto; }
+  .qimg { border-radius: 4px; }
+  .opt { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 12px; margin: 8px 0; border: 1.5px solid #d6dbe6; border-radius: 8px; background: #fdfdfd; }
+  .ltr { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: #e8edf7; color: #1b1f2a; font-weight: bold; text-align: center; line-height: 28px; font-size: 14px; }
+  .ot { flex: 1 1 auto; overflow-x: auto; }
+  .opt.sel { background: #e2f0d9; border-color: #388e3c; }
+  .opt.sel .ltr { background: #388e3c; color: #fff; }
+  .opt.ok { background: #e3f6e6; border-color: #2e7d32; }
+  .opt.ok .ltr { background: #2e7d32; color: #fff; }
+  .opt.bad { background: #fde7e7; border-color: #c62828; }
+  .opt.bad .ltr { background: #c62828; color: #fff; }
+  .lbls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
+  .lb { padding: 16px 0; font-size: 20px; font-weight: bold; border: 1.5px solid #d6dbe6; border-radius: 10px; background: #fdfdfd; color: #1b1f2a; }
+  .lb.sel { background: #388e3c; border-color: #388e3c; color: #fff; }
+  .lb.ok { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+  .lb.bad { background: #c62828; border-color: #c62828; color: #fff; }
+  .num label { display: block; font-weight: bold; margin-bottom: 6px; }
+  .num input { width: 100%; font-size: 22px; padding: 12px; border: 1.5px solid #9aa5b8; border-radius: 8px; }
+  .rv { margin-top: 10px; padding: 10px; border-radius: 8px; font-weight: bold; }
+  .rv.ok { background: #e3f6e6; color: #1b5e20; }
+  .hint { font-size: 12px; color: #7a8497; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div id="q"></div>
+<div id="o"></div>
+<div class="hint" id="hint" style="display:none">Image par tap karo = 3D view</div>
+<script>
+(function () {
+  var state = {};
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function cls(i) {
+    var d = state, rv = d.review;
+    if (rv) {
+      var c = rv.correct;
+      if (c !== '' && c != null && String(c) === String(i)) return ' ok';
+      if (d.selected === i) return ' bad';
+      return '';
+    }
+    return d.selected === i ? ' sel' : '';
+  }
+  function typeset() {
+    if (window.MathJax && MathJax.typesetPromise) {
+      try { MathJax.typesetClear && MathJax.typesetClear(); } catch (e) {}
+      MathJax.typesetPromise([document.getElementById('q'), document.getElementById('o')]).catch(function () {});
+    }
+  }
+  function bindImages() {
+    var imgs = document.querySelectorAll('#q img, #o img');
+    document.getElementById('hint').style.display = imgs.length ? 'block' : 'none';
+  }
+  window.NTA = {
+    render: function (d) {
+      state = d;
+      document.getElementById('q').innerHTML = d.html || '';
+      var h = '';
+      if (d.type === 'NUM') {
+        h = '<div class="num"><label>Answer (number)</label><input id="numin" type="text" inputmode="decimal" autocomplete="off" value="' +
+          esc(d.numeric || '') + '"' + (d.review ? ' readonly' : '') + '></div>';
+        if (d.review) h += '<div class="rv ok">Correct answer: ' + esc(d.review.correct === '' || d.review.correct == null ? '-' : d.review.correct) + '</div>';
+      } else if (d.labels) {
+        h = '<div class="lbls">';
+        (d.options || []).forEach(function (t, i) { h += '<button class="lb' + cls(i) + '" data-i="' + i + '">' + esc(t) + '</button>'; });
+        h += '</div>';
+      } else {
+        (d.options || []).forEach(function (t, i) {
+          h += '<div class="opt' + cls(i) + '" data-i="' + i + '"><span class="ltr">' + String.fromCharCode(65 + i) + '</span><div class="ot">' + t + '</div></div>';
+        });
+      }
+      document.getElementById('o').innerHTML = h;
+      var inp = document.getElementById('numin');
+      if (inp && !d.review) inp.addEventListener('input', function () { AndroidBridge.numeric(inp.value); });
+      window.scrollTo(0, 0);
+      bindImages();
+      typeset();
+    }
+  };
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t && t.tagName === 'IMG') { AndroidBridge.image(t.getAttribute('src') || ''); return; }
+    var el = t && t.closest ? t.closest('[data-i]') : null;
+    if (!el || state.review) return;
+    var i = parseInt(el.getAttribute('data-i'), 10);
+    state.selected = i;
+    var all = document.querySelectorAll('#o [data-i]');
+    for (var k = 0; k < all.length; k++) {
+      var on = parseInt(all[k].getAttribute('data-i'), 10) === i;
+      all[k].classList.toggle('sel', on);
+    }
+    AndroidBridge.select(i);
+  });
+})();
+</script>
+</body>
+</html>

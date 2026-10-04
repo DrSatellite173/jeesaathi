@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1976D2</color>
+    <color name="primary_dark">#0D47A1</color>
+    <color name="accent">#FFEB3B</color>
+    <color name="bg">#F4F6FA</color>
+    <color name="nta_nv">#E0E0E0</color>
+    <color name="nta_na">#E53935</color>
+    <color name="nta_a">#43A047</color>
+    <color name="nta_m">#7E57C2</color>
+    <color name="ok">#2E7D32</color>
+    <color name="bad">#C62828</color>
+    <color name="warn">#EF6C00</color>
+    <color name="text_dark">#1B1F2A</color>
+    <color name="text_mid">#5B6475</color>
+</resources>
