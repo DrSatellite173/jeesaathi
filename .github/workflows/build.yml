@@ -1,3 +1,22 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Auto-Extract or Setup Structure
         run: |
           # Unzip if ZIP file exists
@@ -23,6 +42,18 @@
             echo 'include(":app")' > settings.gradle.kts
           fi
 
-          # Generate Gradle wrapper with version 8.0+ (Java 17 compatible)
-          gradle wrapper --gradle-version=8.0
+          # Install gradle and generate Java 17 compatible Wrapper (Version 8.5)
+          sudo apt-get update && sudo apt-get install -y gradle
+          gradle wrapper --gradle-version=8.5
           chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            **/build/outputs/apk/debug/*.apk
