@@ -17,20 +17,32 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Extract ZIP and Fix Structure
+      - name: Auto-Extract or Setup Structure
         run: |
-          # 1. Unzip the archive if present
+          # Unzip if ZIP file exists
           if ls *.zip 1> /dev/null 2>&1; then
-            echo "Unzipping ZIP file..."
+            echo "Extracting ZIP..."
             unzip -o *.zip
           fi
 
-          # 2. If contents are nested inside a folder, bring them out
+          # If files extracted into a subfolder, move them to root
           if [ -d "JEESaathiTests" ]; then
             cp -r JEESaathiTests/* . 2>/dev/null || true
           fi
 
-          # 3. Create standard Gradle wrapper
+          # Create minimal app structure if missing
+          mkdir -p app/src/main/java/com/exam/app app/src/main/res/layout app/src/main/res/values
+
+          # Move loose source files into app structure if needed
+          mv *.kt app/src/main/java/com/exam/app/ 2>/dev/null || true
+          mv *.xml app/src/main/res/layout/ 2>/dev/null || true
+
+          # Create essential build settings if missing
+          if [ ! -f settings.gradle.kts ] && [ ! -f settings.gradle ]; then
+            echo 'include(":app")' > settings.gradle.kts
+          fi
+
+          # Install gradle to generate robust wrapper
           sudo apt-get update && sudo apt-get install -y gradle
           gradle wrapper
           chmod +x gradlew
