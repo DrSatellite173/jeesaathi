@@ -17,43 +17,44 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Auto-Extract or Setup Structure
+      - name: Force Fix Directory Structure
         run: |
-          # Unzip if ZIP file exists
+          # 1. Extract ZIP if present
           if ls *.zip 1> /dev/null 2>&1; then
-            echo "Extracting ZIP..."
             unzip -o *.zip
           fi
-
-          # If files extracted into a subfolder, move them to root
           if [ -d "JEESaathiTests" ]; then
             cp -r JEESaathiTests/* . 2>/dev/null || true
           fi
 
-          # Create minimal app structure if missing
+          # 2. Ensure basic Android module layout exists
           mkdir -p app/src/main/java/com/exam/app app/src/main/res/layout app/src/main/res/values
 
-          # Move loose source files into app structure if needed
-          mv *.kt app/src/main/java/com/exam/app/ 2>/dev/null || true
-          mv *.xml app/src/main/res/layout/ 2>/dev/null || true
+          # Move Kotlin & XML files if scattered
+          find . -maxdepth 1 -name "*.kt" -exec mv {} app/src/main/java/com/exam/app/ \; 2>/dev/null || true
+          find . -maxdepth 1 -name "*.xml" -exec mv {} app/src/main/res/layout/ \; 2>/dev/null || true
 
-          # Create essential build settings if missing
+          # Create basic root build.gradle.kts if missing
+          if [ ! -f build.gradle.kts ] && [ ! -f build.gradle ]; then
+            echo 'plugins { id("com.android.application") version "8.1.1" apply false; id("org.jetbrains.kotlin.android") version "1.9.0" apply false }' > build.gradle.kts
+          fi
+
+          # Create basic settings.gradle.kts if missing
           if [ ! -f settings.gradle.kts ] && [ ! -f settings.gradle ]; then
             echo 'include(":app")' > settings.gradle.kts
           fi
 
-          # Install gradle and generate Java 17 compatible Wrapper (Version 8.5)
+          # 3. Setup Gradle Wrapper
           sudo apt-get update && sudo apt-get install -y gradle
-          gradle wrapper --gradle-version=8.5
+          gradle wrapper --gradle-version=8.2
           chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon || ./gradlew build --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: |
-            app/build/outputs/apk/debug/app-debug.apk
-            **/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/**/*.apk"
+
